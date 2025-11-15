@@ -34,9 +34,9 @@
 
     // === Wrap sendJoint with LOG ===
     const orig = window.sendJoint;
-    window.sendJoint = function (j, v, d) {
-        console.log(`[AI] ${j} → ${v} (over ${d}s)`);
-        orig(j, v, d);
+    window.sendJoint = function (j, v) {
+        console.log(`[AI] ${j} → ${v}`);
+        orig(j, v);
     };
 
     // === MAIN AI: Move ALL joints in wave pattern ===

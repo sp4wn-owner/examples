@@ -138,7 +138,7 @@ window.addEventListener('message', e => {
             btn.title = enabled ? 'AI: ON' : 'AI: OFF';
         }
         if (enabled) {
-            window.startCameraFeed(2);
+            window.startCameraFeed();
         } else {
             window.stopCameraFeed();
         }
