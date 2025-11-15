@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Spawn Portal — AI Control</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        :root {
+            --accent: #00B4D8;
+            --light: #66D4E8;
+            --text: #B3E8FF;
+            --border: rgba(0, 180, 216, .3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: system-ui;
+            color: var(--text);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #log,
+        #sliders-panel {
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) rgba(0, 180, 216, .15);
+        }
+
+        #log::-webkit-scrollbar,
+        #sliders-panel::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #log::-webkit-scrollbar-track,
+        #sliders-panel::-webkit-scrollbar-track {
+            background: rgba(0, 180, 216, .08);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        #log::-webkit-scrollbar-thumb,
+        #sliders-panel::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 6px;
+            border: 2px solid #000;
+            box-shadow: 0 0 12px rgba(0, 180, 216, .6);
+        }
+
+        #panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 16px 16px;
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+        }
+
+        #input {
+            background: transparent;
+            color: var(--light);
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: 12px;
+            font: 18px/1.4 monospace;
+            resize: none;
+            outline: none;
+            height: 64px;
+            backdrop-filter: blur(8px);
+        }
+
+        #send {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            padding: 0 28px;
+            height: 64px;
+            font-weight: 900;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 180, 216, .5);
+        }
+
+        #log,
+        #sliders-panel {
+            position: fixed;
+            top: 16px;
+            width: 420px;
+            max-width: 90vw;
+            height: calc(85vh);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            overflow-y: auto;
+            font: 15px/1.5 monospace;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+            z-index: 999;
+        }
+
+        #log {
+            right: 16px;
+        }
+
+        #sliders-panel {
+            left: 16px;
+        }
+
+        #sliders-panel h3 {
+            margin: 0 0 16px;
+            font-size: 20px;
+            font-weight: 900;
+            text-align: center;
+            color: var(--light);
+            letter-spacing: 1px;
+        }
+
+        .joint {
+            margin: 12px 0;
+            padding: 10px;
+            backdrop-filter: blur(4px);
+        }
+
+        .joint label {
+            font-size: 11px;
+            color: var(--text);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .joint input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, .1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .joint input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 12px var(--accent);
+        }
+
+        .joint span {
+            float: right;
+            font-size: 11px;
+            color: var(--light);
+            font-weight: bold;
+        }
+
+        .msg {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            backdrop-filter: blur(4px);
+        }
+
+        .you {
+            color: #8be9fd;
+        }
+
+        .reply {
+            color: #bd93f9;
+            font-size: 13px;
+        }
+
+        .status {
+            color: var(--light);
+        }
+
+        .warn {
+            color: #ff5555;
+        }
+
+        #vr-btn,
+        #ai-btn {
+            position: fixed;
+            z-index: 1001;
+            width: 68px;
+            height: 68px;
+            background: transparent;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 180, 216, .6);
+            backdrop-filter: blur(8px);
+        }
+
+        #vr-btn {
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #vr-btn i,
+        #ai-btn i {
+            color: var(--accent);
+            font-size: 36px;
+        }
+
+        #vr-btn:hover,
+        #ai-btn:hover {
+            box-shadow: 0 0 40px var(--accent);
+            transform: scale(1.15);
+        }
+
+        #vr-btn.vr-active,
+        #ai-btn.listening {
+            border-color: var(--light);
+            box-shadow: 0 0 50px var(--light);
+        }
+
+        #vr-btn.vr-active {
+            transform: translateX(-50%) scale(1.15);
+        }
+
+        #ai-btn {
+            bottom: 96px;
+            right: 16px;
+            background: linear-gradient(135deg, #00B4D8, #8be9fd);
+            border: 3px solid rgba(0, 180, 216, .6);
+            color: #000;
+            font-size: 28px;
+            box-shadow: 0 0 30px rgba(0, 180, 216, .8);
+        }
+
+        #robot-selector {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 1002;
+            display: none;
+            min-width: 200px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 180, 216, 0.3);
+        }
+
+        #robot-selector::before {
+            content: "Select Robot:";
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--light);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        #robot-select {
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--light);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            font: 14px monospace;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        #robot-selector button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font: 12px monospace;
+            font-weight: 600;
+            width: 100%;
+            transition: background 0.2s ease;
+        }
+
+        #robot-selector button:hover {
+            background: var(--light);
+        }
+    </style>
+</head>
+
+<body>
+
+    <iframe id="robot" src="https://portal.sp4wn.com/themis" allow="xr-spatial-tracking; fullscreen"
+        sandbox="allow-scripts allow-same-origin allow-modals"></iframe>
+
+    <button id="vr-btn" title="Enter VR"><i class="fas fa-vr-cardboard"></i></button>
+
+    <div id="robot-selector">
+        <select id="robot-select">
+            <option value="themis" selected>Themis</option>
+            <option value="galaxear1">Galaxea R1</option>
+            <option value="unitree">Unitree G1</option>
+            <option value="dropbear">Dropbear</option>
+            <option value="piperarms">Piper Arms</option>
+        </select>
+        <button onclick="loadSelectedRobot()">Load</button>
+    </div>
+
+    <button id="ai-btn" title="Talk to AI Brain"><i class="fas fa-brain"></i></button>
+
+    <div id="panel">
+        <textarea id="input" placeholder="Say anything… AI will make THEMIS obey"></textarea>
+        <button id="send">SEND</button>
+    </div>
+
+    <div id="sliders-panel">
+        <h3 id="robot-title">THEMIS</h3>
+        <div id="sliders">Loading joints…</div>
+    </div>
+
+    <div id="log">
+        <div class="status">Waiting for robot…</div>
+    </div>
+
+    <script>
+        const promptRobotSelect = true;
+        let currentRobot = null;
+
+        window.loadSelectedRobot = () => {
+            const select = document.getElementById('robot-select');
+            const robot = select.value;
+            document.getElementById('robot-selector').style.display = 'none';
+            currentRobot = robot;
+            post({ type: 'load-robot', robot });
+        };
+
+        if (!localStorage.getItem('xai_key')) localStorage.setItem('xai_key', prompt('🔑 Free Grok key (or Cancel for offline)'));
+        const iframe = document.getElementById('robot'), input = document.getElementById('input'), sendBtn = document.getElementById('send'),
+            log = document.getElementById('log'), sliders = document.getElementById('sliders'), vrBtn = document.getElementById('vr-btn'),
+            aiBtn = document.getElementById('ai-btn'), url = 'https://portal.sp4wn.com';
+        let ready = false, jointMap = null, currentLoop = null;
+
+        const ts = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const say = (t, c = 'status') => { const d = document.createElement('div'); d.className = `msg ${c}`; d.innerHTML = `<small>[${ts()}]</small> ${t}`; log.appendChild(d); log.scrollTop = log.scrollHeight; };
+        const post = m => { m._id = Date.now() + Math.random(); iframe.contentWindow.postMessage(m, url); };
+
+        function animateTo(pose, onComplete = () => { }) {
+            if (pose.relax) { post({ type: 'relax' }); onComplete(); return; }
+            const joints = Object.entries(pose);
+            say(`🎬 ${joints.length} joints gliding…`, 'status');
+            const DURATION = 800;
+            const STEPS = 20;
+            const INTERVAL = DURATION / STEPS;
+            let step = 0;
+            const timer = setInterval(() => {
+                step++;
+                const t = step / STEPS;
+                const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                joints.forEach(([joint, target]) => {
+                    const slider = Array.from(document.querySelectorAll('.joint input[type=range]'))
+                        .find(s => s.parentElement.querySelector('label').textContent === joint);
+                    const start = slider ? +slider.value : 0;
+                    const value = start + (target - start) * ease;
+                    post({ type: 'set-joint', joint, value });
+                    if (slider) slider.value = value;
+                });
+                if (step >= STEPS) {
+                    clearInterval(timer);
+                    onComplete();
+                }
+            }, INTERVAL);
+        }
+
+        window.addEventListener('message', e => {
+            if (e.data === 'robot-ready') { ready = true; say('ROBOT READY'); post({ type: 'get_joints' }); return; }
+
+            if (e.data.type === 'robot-select') {
+                const select = document.getElementById('robot-select');
+                let selectedValue = select.options[select.selectedIndex]?.value?.trim();
+                if (!selectedValue) {
+                    const selectedOption = Array.from(select.options).find(opt => opt.hasAttribute('selected'));
+                    selectedValue = selectedOption?.value?.trim();
+                }
+                if (promptRobotSelect) {
+                    document.getElementById('robot-selector').style.display = 'block';
+                    document.getElementById('robot-select').value = 'unitree';
+                } else if (selectedValue && VALID_ROBOTS.has(selectedValue)) {
+                    post({ type: 'load-robot', robot: selectedValue });
+                } else {
+                    post({ type: 'load-robot', robot: 'unitree' });
+                }
+                return;
+            }
+
+            if (e.data?.type === 'JOINTS_LIST') {
+                const path = iframe.src.split('/').pop();
+                robotTitle.textContent = path.toUpperCase();
+                sliders.innerHTML = '';
+                e.data.joints.forEach(j => {
+                    const d = document.createElement('div'); d.className = 'joint';
+                    d.innerHTML = `<label>${j.name}</label>
+                                   <input type="range" min="${j.min}" max="${j.max}" step="0.01" value="${j.value}">
+                                   <span>${j.value.toFixed(2)}</span>`;
+                    const slider = d.querySelector('input');
+                    const span = d.querySelector('span');
+                    slider.oninput = () => {
+                        const v = parseFloat(slider.value);
+                        span.textContent = v.toFixed(2);
+                        post({ type: 'set-joint', joint: j.name, value: v });
+                    };
+                    sliders.appendChild(d);
+                });
+                say(`LOADED ${e.data.joints.length} JOINTS`);
+                return;
+            }
+            if (e.data?.type && e.data.type !== 'ACK') say(`← ${JSON.stringify(e.data)}`, 'reply');
+        });
+
+        vrBtn.onclick = () => {
+            const a = vrBtn.classList.toggle('vr-active');
+            a ? (post({ type: 'vr-end' }), post({ type: 'simulator-hide' }), setTimeout(() => iframe.src = iframe.src, 500))
+                : (post({ type: 'simulator-show' }), setTimeout(() => post({ type: 'vr-start' }), 100));
+            vrBtn.innerHTML = a ? '<i class="fas fa-times"></i>' : '<i class="fas fa-vr-cardboard"></i>';
+        };
+
+        const tinyBrain = {
+            templates: {  
+                wave: { "SHOULDER_PITCH_L": 0.6, "ELBOW_PITCH_L": 1.3, "SHOULDER_YAW_L": -0.5 },
+                bow: { "HEAD_PITCH": 0.7, "SHOULDER_PITCH_L": 0.3, "SHOULDER_PITCH_R": 0.3 },
+                dab: { "HEAD_PITCH": -0.4, "SHOULDER_PITCH_R": -1.2, "ELBOW_PITCH_R": -0.8 },
+                macarena: { "SHOULDER_PITCH_L": 0.5, "ELBOW_PITCH_L": 1.0, "SHOULDER_PITCH_R": -0.5, "ELBOW_PITCH_R": -1.0 },
+                zombie: { "HEAD_PITCH": 0.2, "SHOULDER_ROLL_L": 0.5, "SHOULDER_ROLL_R": 0.5 },
+                victory: { "SHOULDER_PITCH_L": -0.8, "SHOULDER_PITCH_R": -0.8, "SHOULDER_YAW_L": 0.5, "SHOULDER_YAW_R": -0.5 },
+                kick: { "HIP_PITCH_R": 1.2, "KNEE_PITCH_R": -1.5, "ANKLE_PITCH_R": 0.5 },
+                nod: { "HEAD_PITCH": -0.3 },
+                shake: { "HEAD_YAW": 0.5, "SHOULDER_ROLL_L": -0.3, "SHOULDER_ROLL_R": 0.3 }
+            },
+            sequences: { 
+                dance: [
+                    { "SHOULDER_PITCH_L": 0.8, "ELBOW_PITCH_L": 1.4, "SHOULDER_PITCH_R": 0.8, "ELBOW_PITCH_R": 1.4 },
+                    { "SHOULDER_PITCH_L": -0.8, "ELBOW_PITCH_L": 0.5, "SHOULDER_PITCH_R": -0.8, "ELBOW_PITCH_R": 0.5 },
+                    { "SHOULDER_YAW_L": 1.0, "SHOULDER_YAW_R": -1.0, "ELBOW_YAW_L": 0.5, "ELBOW_YAW_R": -0.5 }
+                ],
+                march: [
+                    { "HIP_PITCH_L": 0.8, "KNEE_PITCH_L": -1.2, "HIP_ROLL_L": 0.3, "ANKLE_ROLL_L": 0.2 },
+                    { "HIP_PITCH_R": 0.8, "KNEE_PITCH_R": -1.2, "HIP_ROLL_R": 0.3, "ANKLE_ROLL_R": 0.2 }
+                ],
+                moonwalk: [
+                    { "HIP_PITCH_L": -0.5, "KNEE_PITCH_L": 0.3, "ANKLE_PITCH_L": 0.5, "HIP_ROLL_L": -0.2 },
+                    { "HIP_PITCH_R": -0.5, "KNEE_PITCH_R": 0.3, "ANKLE_PITCH_R": 0.5, "HIP_ROLL_R": -0.2 }
+                ]
+            },
+            think(text) {
+                text = text.toLowerCase();
+                if (!jointMap) return { relax: true };
+                const allActions = { ...this.templates, ...this.sequences };
+                let bestScore = 0, bestName = '';
+                for (const name of Object.keys(allActions)) {
+                    const score = name.split(' ').filter(w => text.includes(w)).length;
+                    if (score > bestScore) { bestScore = score; bestName = name; }
+                }
+                if (bestScore === 0) return { relax: true };
+                if (this.sequences[bestName]) return this.sequences[bestName];
+                return [this.templates[bestName]];
+            }
+        };
+
+    async function askAI(text) {
+        say('AI inventing…', 'status');
+
+        // 1. GROK CLOUD
+        let key = localStorage.getItem('xai_key');
+        if (!key) {
+            key = prompt('🔑 Paste your Grok API key (Cancel = offline)');
+            if (!key) return tinyBrainFallback(text);
+            localStorage.setItem('xai_key', key);
+        }
+
+        if (key.startsWith('xai-')) {
+            try {
+                const jointNames = JSON.stringify(Object.keys(jointMap));
+                const res = await fetch('https://api.x.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: 'grok-4-fast-reasoning',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `Reply ONLY with valid JSON—no other text. Use exact format with quotes around keys/values where needed.
+
+                                Single pose: { "JOINT": number, ... }
+
+                                Loop (2-3 poses): [ { "JOINT": number, ... }, { "JOINT": number, ... } ]
+
+                                Relax: { "relax": true }
+
+                                Joints: ${jointNames}
+
+                                Examples:
+                                Wave: { "SHOULDER_PITCH_L": 0.6, "ELBOW_PITCH_L": 1.3 }
+                                Dance: [ { "SHOULDER_PITCH_L": 0.8, "SHOULDER_PITCH_R": 0.8 }, { "SHOULDER_PITCH_L": -0.8, "SHOULDER_PITCH_R": -0.8 } ]`
+                            },
+                            { role: 'user', content: text }
+                        ],
+                        temperature: 0.01,
+                        max_tokens: 250
+                    })
+                });
+
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const errText = await res.text();
+                    throw new Error(`Invalid response type: ${contentType}. Body: ${errText.slice(0, 100)}`);
+                }
+
+                if (!res.ok) {
+                    const err = await res.text();
+                    console.log('%c☁️ API Error', 'color:orange', res.status, err);
+                    say(`☁️ ${res.status}: ${err.slice(0, 200)}`, 'warn');
+                    throw new Error(`API ${res.status}: ${err.slice(0, 100)}`);
+                }
+
+                const json = await res.json();
+
+                if (!json.choices || !json.choices[0] || !json.choices[0].message || !json.choices[0].message.content) {
+                    throw new Error(`Empty or malformed response: ${JSON.stringify(json).slice(0, 200)}`);
+                }
+
+                let raw = json.choices[0].message.content.trim();
+
+                raw = fixMalformedJson(raw);
+
+                let pose;
+                try {
+                    pose = JSON.parse(raw);
+                } catch (parseErr) {
+                    console.log('%cJSON Parse Fail—Raw was:', 'color:yellow', raw);
+                    throw new Error(`Parse error: ${parseErr.message}. Raw: ${raw.slice(0, 100)}`);
+                }
+
+                say('☁️ Grok pose/sequence', 'reply');
+                console.log('Grok output (fixed):', raw);
+                return pose;
+
+            } catch (e) {
+                console.error("Cloud failed:", e);
+                if (e.message.includes('SyntaxError') || e.message.includes('Unexpected end') || e.message.includes('Expected')) {
+                    console.log('%cJSON/Response Fail—Grok-4 being wild? → local brain', 'color:yellow', e.message);
+                    say('☁️ JSON glitch (Grok-4 quirk) → local brain', 'warn');
+                } else {
+                    say(`☁️ ${e.message.slice(0, 100)} → local brain`, 'warn');
+                }
+            }
+        }
+
+        return tinyBrainFallback(text);
+    }
+
+    function fixMalformedJson(raw) {
+        // Strip code fences
+        raw = raw.replace(/^```json\n?|\n?```$/g, '').trim();
+
+        // Fix trailing commas
+        raw = raw.replace(/,\s*([\]}])/g, '$1');
+
+        // Fix ,{ to }, { (your main issue: closes obj before new)
+        raw = raw.replace(/,\s*\{/g, '}, {');
+
+        // Fix extra {{ to { (Grok-4 nests wrongly)
+        raw = raw.replace(/\{\{/g, '{');
+
+        // Fix }} to } 
+        raw = raw.replace(/\}\}/g, '}');
+
+        // Simple balance: count open/close (ignore strings roughly)
+        let opens = (raw.match(/[\[\{]/g) || []).length;
+        let closes = (raw.match(/[\]\}]/g) || []).length;
+        const startChar = raw.startsWith('[') ? '[' : '{';
+        const endChar = raw.startsWith('[') ? ']' : '}';
+        const toAdd = opens - closes;
+        if (toAdd > 0) {
+            raw += endChar.repeat(toAdd);
+        }
+
+        // Ensure starts correctly
+        if (!raw.startsWith(startChar)) {
+            raw = startChar + raw;
+            opens++;
+        }
+        if (!raw.endsWith(endChar)) {
+            raw += endChar;
+        }
+
+        return raw;
+        }
+
+        function tinyBrainFallback(text) {
+            const rawPose = tinyBrain.think(text);
+            const isSeq = Array.isArray(rawPose);
+            say(`🧠 Local ${isSeq ? 'sequence' : 'pose'}: ${isSeq ? `${rawPose.length} poses` : Object.keys(rawPose).join(', ')}`, 'reply');
+            return rawPose;
+        }
+
+        const run = async txt => {
+            if (!txt || !ready) return;
+            if (currentLoop) {
+                clearInterval(currentLoop);
+                currentLoop = null;
+                say('⏹️ Stopped loop', 'status');
+            }
+            say(txt, 'you'); input.value = '';
+
+            const rawPose = await askAI(txt);
+            if (rawPose.relax) { post({ type: 'relax' }); say('😌 Relaxing', 'reply'); return; }
+
+            let poses;
+            if (Array.isArray(rawPose)) {
+                poses = rawPose;
+            } else {
+                poses = [rawPose];
+            }
+
+            animateTo(poses[0], () => {
+                if (poses.length > 1) {
+                    let idx = 1;
+                    currentLoop = setInterval(() => {
+                        const nextPose = poses[idx % poses.length];
+                        if (nextPose.relax) {
+                            post({ type: 'relax' });
+                            clearInterval(currentLoop);
+                            currentLoop = null;
+                            say('😌 Loop relaxed', 'reply');
+                            return;
+                        }
+                        animateTo(nextPose, () => { });
+                        idx++;
+                    }, 1200);
+                    say(`🔄 Looping ${poses.length} poses until next command`, 'status');
+                } else {
+                    say('✨ Pose complete', 'reply');
+                }
+            });
+        };
+        sendBtn.onclick = () => { run(input.value); };
+        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
+
+        let listening = false, rec = null;
+        aiBtn.onclick = () => {
+            if (listening) { rec?.stop(); return; }
+            const q = input.value.trim(); if (!q) { say('Speak or type!', 'warn'); return; }
+            say(q, 'you'); input.value = '';
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                rec.lang = 'en-US'; rec.interimResults = false;
+                aiBtn.classList.add('listening'); aiBtn.innerHTML = '<i class="fas fa-microphone"></i>'; listening = true;
+                rec.onresult = e => { run(e.results[0][0].transcript); };
+                rec.onend = () => { aiBtn.classList.remove('listening'); aiBtn.innerHTML = '<i class="fas fa-brain"></i>'; listening = false; };
+                rec.start();
+            } else run(q);
+        };
+
+        say('∞ AI BRAIN LIVE – no key needed!', 'status');
+        say('Try: wave (single), dance/march/moonwalk (loops!), kick, nod, shake, stop', 'status');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Spawn Portal</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        :root {
+            --accent: #00B4D8;
+            --light: #66D4E8;
+            --text: #B3E8FF;
+            --border: rgba(0, 180, 216, .3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: system-ui;
+            color: var(--text);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #log,
+        #sliders-panel {
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) rgba(0, 180, 216, .15);
+        }
+
+        #log::-webkit-scrollbar,
+        #sliders-panel::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        #log::-webkit-scrollbar-track,
+        #sliders-panel::-webkit-scrollbar-track {
+            background: rgba(0, 180, 216, .08);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        #log::-webkit-scrollbar-thumb,
+        #sliders-panel::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 6px;
+            border: 2px solid #000;
+            box-shadow: 0 0 12px rgba(0, 180, 216, .6);
+            transition: all .2s ease;
+        }
+
+        #log::-webkit-scrollbar-thumb:hover,
+        #sliders-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--light);
+            box-shadow: 0 0 20px var(--light);
+        }
+
+        #panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 16px 16px;
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+        }
+
+        #input {
+            background: transparent;
+            color: var(--light);
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: 12px;
+            font: 18px/1.4 monospace;
+            resize: none;
+            outline: none;
+            height: 64px;
+            backdrop-filter: blur(8px);
+        }
+
+        #send {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            padding: 0 28px;
+            height: 64px;
+            font-weight: 900;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 180, 216, .5);
+        }
+
+        #log,
+        #sliders-panel {
+            position: fixed;
+            top: 16px;
+            width: 420px;
+            max-width: 90vw;
+            height: calc(85vh);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            overflow-y: auto;
+            font: 15px/1.5 monospace;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+            z-index: 999;
+        }
+
+        #log {
+            right: 16px;
+        }
+
+        #sliders-panel {
+            left: 16px;
+        }
+
+        #sliders-panel h3 {
+            margin: 0 0 16px;
+            font-size: 20px;
+            font-weight: 900;
+            text-align: center;
+            color: var(--light);
+            letter-spacing: 1px;
+        }
+
+        .joint {
+            margin: 12px 0;
+            padding: 10px;
+            backdrop-filter: blur(4px);
+        }
+
+        .joint label {
+            font-size: 11px;
+            color: var(--text);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .joint input[type=range] {
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, .1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .joint input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 12px var(--accent);
+        }
+
+        .joint span {
+            float: right;
+            font-size: 11px;
+            color: var(--light);
+            font-weight: bold;
+        }
+
+        .msg {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            backdrop-filter: blur(4px);
+        }
+
+        .you {
+            color: #8be9fd;
+        }
+
+        .reply {
+            color: #bd93f9;
+            font-size: 13px;
+        }
+
+        .status {
+            color: var(--light);
+        }
+
+        .warn {
+            color: #ff5555;
+        }
+
+        #vr-btn {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 68px;
+            height: 68px;
+            background: transparent;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 180, 216, .6);
+            backdrop-filter: blur(8px);
+        }
+
+        #vr-btn i {
+            color: var(--accent);
+            font-size: 36px;
+        }
+
+        #vr-btn:hover {
+            box-shadow: 0 0 40px var(--accent);
+            transform: translateX(-50%) scale(1.15);
+        }
+
+        #vr-btn.vr-active {
+            border-color: var(--light);
+            box-shadow: 0 0 50px var(--light);
+        }
+
+        #robot-selector {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 1002;
+            display: none;
+            min-width: 200px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 180, 216, 0.3);
+        }
+
+        #robot-selector::before {
+            content: "Select Robot:";
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--light);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        #robot-select {
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--light);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            font: 14px monospace;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        #robot-selector button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font: 12px monospace;
+            font-weight: 600;
+            width: 100%;
+            transition: background 0.2s ease;
+        }
+
+        #robot-selector button:hover {
+            background: var(--light);
+        }
+    </style>
+</head>
+
+<body>
+
+    <iframe id="robot" src="https://portal.sp4wn.com/robot" allow="xr-spatial-tracking; fullscreen"
+        sandbox="allow-scripts allow-same-origin allow-modals"
+        style="position:absolute; inset:0; width:100%; height:100%; border:none;">
+    </iframe>
+
+    <button id="vr-btn" title="Enter VR"><i class="fas fa-vr-cardboard"></i></button>
+
+    <div id="robot-selector">
+        <select id="robot-select">
+            <option value="themis" selected>Themis</option>
+            <option value="galaxear1">Galaxea R1</option>
+            <option value="unitree">Unitree G1</option>
+            <option value="dropbear">Dropbear</option>
+            <option value="piperarms">Piper Arms</option>
+        </select>
+        <button onclick="loadSelectedRobot()">Load</button>
+    </div>
+
+    <div id="panel">
+        <textarea id="input" placeholder="wave | bow | dance | look left | relax"></textarea>
+        <button id="send">SEND</button>
+    </div>
+
+    <div id="sliders-panel">
+        <h3 id="robot-title">SELECT ROBOT</h3>
+        <div id="sliders">Waiting for selection…</div>
+    </div>
+
+    <div id="log">
+        <div class="status">Initializing portal…</div>
+    </div>
+
+    <script>
+        const iframe = document.getElementById('robot');
+        const input = document.getElementById('input');
+        const sendBtn = document.getElementById('send');
+        const log = document.getElementById('log');
+        const sliders = document.getElementById('sliders');
+        const vrBtn = document.getElementById('vr-btn');
+        const robotTitle = document.getElementById('robot-title');
+        const robotUrl = 'https://portal.sp4wn.com';
+        let currentRobot = null;
+        let ready = false; 
+        const promptRobotSelect = true;
+
+        const ts = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+        const say = (text, cls = 'status') => {
+            const div = document.createElement('div');
+            div.className = `msg ${cls}`;
+            div.innerHTML = `<small>[${ts()}]</small> ${text}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        };
+        const post = msg => { msg._id = Date.now() + Math.random(); iframe.contentWindow.postMessage(msg, robotUrl); };
+
+        window.loadSelectedRobot = () => {
+            const select = document.getElementById('robot-select');
+            const robot = select.value;
+            document.getElementById('robot-selector').style.display = 'none';
+            currentRobot = robot;
+            post({ type: 'load-robot', robot });
+        };
+
+        vrBtn.onclick = () => {
+            const isActive = vrBtn.classList.contains('vr-active');
+
+            if (isActive) {
+                post({ type: 'vr-end' });
+                post({ type: 'simulator-hide' });
+                setTimeout(() => {
+                    iframe.src = iframe.src;
+                }, 500);
+            } else {
+                post({ type: 'simulator-show' });
+                setTimeout(() => post({ type: 'vr-start' }), 100);
+            }
+        };
+
+        window.addEventListener('message', e => {
+            console.log('Message from iframe:', e.data); 
+            if (e.data === 'robot-ready') {
+                if (e.data.robotLoaded) {  
+                    ready = true;
+                    say('ROBOT READY');
+                    setTimeout(() => post({ type: 'get_joints' }), 800);
+                }
+                return;
+            }
+
+            const VALID_ROBOTS = new Set(['themis', 'galaxea', 'unitree', 'dropbear', 'piperarms']);
+
+            if (e.data.type === 'robot-select') {
+                const select = document.getElementById('robot-select');
+                let selectedValue = select.options[select.selectedIndex]?.value?.trim();
+                if (!selectedValue) {
+                    const selectedOption = Array.from(select.options).find(opt => opt.hasAttribute('selected'));
+                    selectedValue = selectedOption?.value?.trim();
+                }
+                if (promptRobotSelect) {
+                    document.getElementById('robot-selector').style.display = 'block';
+                    document.getElementById('robot-select').value = 'unitree';
+                } else if (selectedValue && VALID_ROBOTS.has(selectedValue)) {
+                    post({ type: 'load-robot', robot: selectedValue });
+                } else {
+                    post({ type: 'load-robot', robot: 'unitree' });
+                }
+                return;
+            }
+
+            if (e.data.type === 'robot-loading') {
+                robotTitle.textContent = `Loading ${e.data.display}…`;
+                sliders.innerHTML = 'Loading joints…';
+                say(`Loading ${e.data.display}…`);
+                return;
+            }
+
+            if (e.data.type === 'robot-loaded') {
+                robotTitle.textContent = e.data.display;
+                currentRobot = e.data.robot;
+                say(`${e.data.display} LOADED`);
+                return;
+            }
+
+            if (e.data.type === 'robot-error') {
+                say(`Robot error: ${e.data.error}`, 'warn');
+                robotTitle.textContent = 'ERROR';
+                sliders.innerHTML = 'Failed to load…';
+                return;
+            }
+
+            if (e.data?.type === 'JOINTS_LIST') {
+                sliders.innerHTML = '';
+                e.data.joints.forEach(j => {
+                    const d = document.createElement('div'); d.className = 'joint';
+                    d.innerHTML = `<label>${j.name}</label>
+                                   <input type="range" min="${j.min}" max="${j.max}" step="0.01" value="${j.value}">
+                                   <span>${j.value.toFixed(2)}</span>`;
+                    const slider = d.querySelector('input');
+                    const span = d.querySelector('span');
+                    slider.oninput = () => {
+                        const v = parseFloat(slider.value);
+                        span.textContent = v.toFixed(2);
+                        post({ type: 'set-joint', joint: j.name, value: v });
+                    };
+                    sliders.appendChild(d);
+                });
+                say(`LOADED ${e.data.joints.length} JOINTS`);
+                return;
+            }
+            if (e.data.type === 'simulator-shown' || e.data.type === 'vr-started') {
+                vrBtn.classList.add('vr-active');
+                vrBtn.innerHTML = '<i class="fas fa-times"></i>';
+                vrBtn.title = 'Exit VR';
+                say('VR MODE: ACTIVE', 'status');
+            }
+            if (e.data.type === 'simulator-hidden' || e.data.type === 'vr-ended') {
+                vrBtn.classList.remove('vr-active');
+                vrBtn.innerHTML = '<i class="fas fa-vr-cardboard"></i>';
+                vrBtn.title = 'Enter VR';
+                say('VR EXITED – IFRAME RELOADED', 'status');
+            }
+            if (e.data.type === 'vr-end') { vrBtn.classList.remove('vr-active'); vrBtn.title = 'Enter VR'; say('VR OFF'); return; }
+            if (e.data.type === 'ACK') return;
+            const payload = typeof e.data === 'object' ? `<pre>${JSON.stringify(e.data, null, 2)}</pre>` : e.data;
+            say(`← ${payload}`, 'reply');
+        });
+
+        const cmds = {
+            wave: [{ type: 'set-pose', pose: { SHOULDER_PITCH_L: 0.6, ELBOW_PITCH_L: 1.3 } }],
+            bow: [{ type: 'set-pose', pose: { SPINE_PITCH: 0.7 } }],
+            salute: [{ type: 'set-pose', pose: { SHOULDER_PITCH_R: -1.1, ELBOW_PITCH_R: -1.4 } }],
+            dance: [{ type: 'set-pose', pose: { SHOULDER_PITCH_L: 0.8, SHOULDER_PITCH_R: 0.8, ELBOW_PITCH_L: 1.4, ELBOW_PITCH_R: 1.4 } }],
+            'look left': [{ type: 'set-pose', pose: { HEAD_YAW: 1.4 } }],
+            'look right': [{ type: 'set-pose', pose: { HEAD_YAW: -1.4 } }],
+            nod: [{ type: 'set-pose', pose: { HEAD_PITCH: -0.6 } }],
+            relax: [{ type: 'relax' }]
+        };
+        const run = txt => {
+            txt = txt.toLowerCase().trim(); let actions = [];
+            for (const [k, list] of Object.entries(cmds))
+                if (txt.includes(k)) actions.push(...list);
+            if (!actions.length) { say(`? "${txt}" → relaxing`); actions = cmds.relax; }
+            actions.forEach((cmd, i) => setTimeout(() => post(cmd), i * 180));
+        };
+
+        sendBtn.onclick = () => { const q = input.value.trim(); if (!q || !ready) return; say(q, 'you'); input.value = ''; run(q); };
+        input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
+        navigator.xr?.addEventListener('sessionend', () => { post({ type: 'vr-end' }); vrBtn.classList.remove('vr-active'); vrBtn.title = 'Enter VR'; });
+    </script>
+</body>
+
+</html>
