@@ -2,7 +2,7 @@
 /* controller.js – Joint sliders + global sendJoint + availableJoints */
 /* --------------------------------------------------------------- */
 const iframe = document.getElementById('arena');
-const TARGET_ORIGIN = 'http://localhost:3000';  // Must match iframe src
+const TARGET_ORIGIN = 'https://arena.sp4wn.com/';
 const activeDrag = new Set();
 window.availableJoints = [];
 
