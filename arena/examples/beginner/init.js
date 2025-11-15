@@ -85,8 +85,6 @@ window.stopCameraFeed = function () {
 /* CENTRAL MESSAGE HANDLER                                         */
 /* --------------------------------------------------------------- */
 window.addEventListener('message', e => {
-    if (e.origin !== TARGET_ORIGIN) return;
-
     const d = e.data;
 
     // JOINTS LIST
@@ -114,18 +112,19 @@ window.addEventListener('message', e => {
 
     // CAMERA FRAME
     if (d?.type === 'CAMERA_FRAME') {
-        // Revoke previous
-        if (lastFrameUrl) {
-            URL.revokeObjectURL(lastFrameUrl);
+        if (d.error) {
+            cameraImg.src = '';
+            cameraImg.alt = 'Camera: Unauthorized';
+            console.warn('[CAMERA] Access denied:', d.error);
+            return;
         }
 
         if (d.buffer) {
             const blob = new Blob([d.buffer], { type: 'image/webp' });
-            const url = URL.createObjectURL(blob);  // ← Created in PARENT origin
+            const url = URL.createObjectURL(blob);
             cameraImg.src = url;
+            if (lastFrameUrl) URL.revokeObjectURL(lastFrameUrl);
             lastFrameUrl = url;
-        } else {
-            console.warn('[CAMERA] Empty buffer');
         }
     }
 
