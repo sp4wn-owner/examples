@@ -4,24 +4,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Robot Joint Controller</title>
+    <title>Arena</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
-    <div id="container">
-        <div class="joint-panel" id="joint-panel"></div>
-        <div id="ai-panel"></div>
-        <iframe id="arena" class="allow-pointer" src="https://arena.sp4wn.com/"></iframe>
-
-        <div id="camera-feed-container">
-            <img id="camera-feed" src="" alt="Camera Feed" />
-            <div id="camera-label">Camera Feed</div>
-        </div>
-    </div>
-
-    <script src="init.js"></script>
+    <iframe id="arena" src="https://arena.sp4wn.com"></iframe>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <script src="controller.js"></script>
     <script src="ai.js"></script>
 </body>
 
