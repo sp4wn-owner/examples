@@ -1,14 +1,8 @@
-/* --------------------------------------------------------------- */
-/* controller.js – Joints + camera frame grabber + AI preview      */
-/* --------------------------------------------------------------- */
 const iframe = document.getElementById('arena');
 const TARGET_ORIGIN = 'https://arena.sp4wn.com';
 window.availableJoints = [];
 let autoStart = true;
 
-/* --------------------------------------------------------------- */
-/* SEND JOINT VALUE                                                */
-/* --------------------------------------------------------------- */
 window.sendJoint = function (jointName, value, duration = 0.3) {
     iframe.contentWindow.postMessage({
         forwardEvent: {
@@ -18,9 +12,6 @@ window.sendJoint = function (jointName, value, duration = 0.3) {
     }, TARGET_ORIGIN);
 };
 
-/* --------------------------------------------------------------- */
-/* CAMERA FRAME GRABBER                          */
-/* --------------------------------------------------------------- */
 let lastFrameUrl = null;
 let isLoopActive = false;
 let lastTime = 0;
@@ -45,7 +36,6 @@ Object.assign(previewImg.style, {
 });
 document.body.appendChild(previewImg);
 
-/** Send a single frame request */
 const requestFrame = (quality = 0.6) => {
     iframe.contentWindow.postMessage({
         type: 'REQUEST_CAMERA_FRAME',
@@ -65,7 +55,6 @@ const loop = (now) => {
     requestAnimationFrame(loop);
 };
 
-/** Start grabbing frames */
 const startCameraFeed = (targetFps = 20) => {
     if (isLoopActive) return;
     fps = targetFps;
@@ -77,16 +66,12 @@ const startCameraFeed = (targetFps = 20) => {
     console.log(`[CAMERA] Feed started @ ~${fps} FPS (preview visible)`);
 };
 
-/** Stop grabbing frames */
 const stopCameraFeed = () => {
     isLoopActive = false;
     previewImg.style.display = 'none';
     console.log('[CAMERA] Feed stopped');
 };
 
-/* --------------------------------------------------------------- */
-/* CENTRAL MESSAGE HANDLER                                         */
-/* --------------------------------------------------------------- */
 window.addEventListener('message', e => {
     const d = e.data;
 
@@ -94,10 +79,13 @@ window.addEventListener('message', e => {
     if (d?.type === 'JOINTS_LIST') {
         window.availableJoints = d.joints;
         console.log('%c[JOINTS LOADED]', 'color:#0f0;font-weight:bold');
-        if (autoStart) startCameraFeed();
+        if (autoStart) {
+            startCameraFeed();
+            buildUI();
+        }
     }
 
-    // CAMERA FRAME – update preview + expose to AI
+    // CAMERA FRAME
     if (d?.type === 'CAMERA_FRAME') {
         if (d.error) {
             previewImg.src = '';
@@ -111,10 +99,8 @@ window.addEventListener('message', e => {
             const url = URL.createObjectURL(blob);
             previewImg.src = url;
 
-            // Expose for AI
             window.latestCameraFrame = url;
 
-            // Revoke previous
             if (lastFrameUrl) URL.revokeObjectURL(lastFrameUrl);
             lastFrameUrl = url;
         }
