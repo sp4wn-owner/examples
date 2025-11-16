@@ -1,6 +1,3 @@
-/* -----------------------------------------------------------------
-   CONFIGURATION – Tweak for your robot
-   ----------------------------------------------------------------- */
 const IMAGE_SIZE = 96;          // 96×96 = fast + good enough
 const FPS = 12;          // prediction rate
 const RECORD_FPS = 8;           // recording rate (lower = less RAM)
@@ -112,16 +109,12 @@ function setLoss(l) {
     if (el) el.textContent = l >= 0 ? l.toFixed(4) : '-';
 }
 
-/* -----------------------------------------------------------------
-   Wait for TF.js
-   ----------------------------------------------------------------- */
 async function waitForTF() {
-    const maxWait = 10000; // 10 seconds max
+    const maxWait = 10000;
     const start = Date.now();
 
     while (Date.now() - start < maxWait) {
         if (typeof tf !== 'undefined' && tf.layers) {
-            // Check if we have any optimizer
             if (tf.optimizers && typeof tf.optimizers.adam === 'function') {
                 console.log('[AI] ADAM optimizer ready');
                 return 'adam';
@@ -167,9 +160,6 @@ function jointsToTensor(jointsObj) {
     return tf.tensor2d([arr]);
 }
 
-/* -----------------------------------------------------------------
-   RECORDING
-   ----------------------------------------------------------------- */
 async function captureSample() {
     if (!lastBlob) return;
     const img = await blobToTensor(lastBlob);
@@ -206,9 +196,6 @@ function clearDataset() {
     setLoss(-1);
 }
 
-/* -----------------------------------------------------------------
-   MODEL – CNN
-   ----------------------------------------------------------------- */
 async function createModel(inputShape, outputDim) {
     const optimizerType = await waitForTF();
 
@@ -232,9 +219,6 @@ async function createModel(inputShape, outputDim) {
     return m;
 }
 
-/* -----------------------------------------------------------------
-   TRAINING
-   ----------------------------------------------------------------- */
 async function train() {
     if (dataset.length < 10) {
         alert('Record at least 10 samples first');
@@ -283,9 +267,7 @@ async function train() {
     setStatus('trained – click Run');
     document.getElementById('ai-run').disabled = false;
 }
-/* -----------------------------------------------------------------
-   PREDICTION
-   ----------------------------------------------------------------- */
+
 async function predictStep() {
     if (!lastBlob || !model) return;
 
@@ -328,9 +310,6 @@ function stopPredict() {
     predictInt = null;
 }
 
-/* -----------------------------------------------------------------
-   GLOBAL CONTROL
-   ----------------------------------------------------------------- */
 function stopAll() {
     running = false;
     recording = false;
@@ -347,9 +326,6 @@ function stopAll() {
     setStatus('stopped');
 }
 
-/* -----------------------------------------------------------------
-   HOOKS
-   ----------------------------------------------------------------- */
 window.currentJoints = {};
 
 window.addEventListener('message', e => {
@@ -362,13 +338,4 @@ window.addEventListener('message', e => {
     }
 });
 
-window.addEventListener('ai-joints-ready', () => {
-    console.log('[AI] Joints ready – building UI');
-    buildUI();
-    setStatus('ready');
-});
-
-/* -----------------------------------------------------------------
-   INIT
-   ----------------------------------------------------------------- */
 waitForTF().then(() => console.log('[AI] Imitation learning loaded'));
