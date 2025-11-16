@@ -10,9 +10,6 @@ const EPOCHS = 4;
 const LEARNING_RATE = 8e-4;
 const CONTINUOUS_LEARN = false;     // set true to keep training while running
 
-/* -----------------------------------------------------------------
-   GLOBAL STATE
-   ----------------------------------------------------------------- */
 let model = null;
 let running = false;
 let recording = false;
@@ -22,9 +19,6 @@ let captureInt = null;
 let predictInt = null;
 let isTraining = false;
 
-/* -----------------------------------------------------------------
-   UI
-   ----------------------------------------------------------------- */
 function buildUI() {
     const panel = createPanel();
     panel.innerHTML = `
@@ -47,9 +41,61 @@ function buildUI() {
     document.getElementById('ai-stop').onclick = stopAll;
     document.getElementById('ai-clear').onclick = clearDataset;
 }
+
+function injectPanelCSS() {
+    if (document.getElementById('ai-panel-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'ai-panel-style';
+    style.textContent = `
+        /* AI PANEL */
+        .ai-panel {
+            position: absolute;
+            top: 50%;
+            left: 16px;
+            transform: translateY(-50%);
+            z-index: 1000;
+            pointer-events: auto;
+            padding: 12px 10px;
+            background: rgba(0, 0, 0, 0);
+            border-radius: 12px;
+            color: #0f0;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ai-panel h3 {
+            margin: 0;
+            font-size: 12px;
+            text-align: center;
+            text-shadow: 0 0 4px rgba(0, 255, 0, .4);
+        }
+
+        .ai-panel select,
+        .ai-panel button {
+            padding: 6px;
+            background: rgba(0, 0, 0, .6);
+            color: #0f0;
+            border: 1px solid #0f0;
+            border-radius: 6px;
+            font-size: 11px;
+        }
+
+        .ai-panel button:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 function createPanel() {
     const div = document.createElement('div');
     div.id = 'ai-panel';
+    div.className = 'ai-panel';
+    injectPanelCSS();
     document.body.appendChild(div);
     return div;
 }
