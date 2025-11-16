@@ -26,7 +26,7 @@ let isTraining = false;
    UI
    ----------------------------------------------------------------- */
 function buildUI() {
-    const panel = document.getElementById('ai-panel') || createPanel();
+    const panel = createPanel();
     panel.innerHTML = `
         <h3>Real-Time Imitation AI</h3>
         <button id="ai-record">Record</button>
